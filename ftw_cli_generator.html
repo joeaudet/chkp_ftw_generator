@@ -52,6 +52,18 @@ const gwOptionsEmpty = {
     "gateway_cluster_member": false
 }
 
+const gwOptions = [
+    { desc: "Hostname", id: "hostname", type: "text", edit: true},
+	{ desc: "SIC OTP", id: "ftw_sic_key", type: "text", edit: true},
+	{ desc: "Primary DNS", id: "primary", type: "text", edit: true},
+	{ desc: "Secondary DNS", id: "secondary", type: "text", edit: true},
+	{ desc: "Install Security Management", id: "install_security_managment", type: "boolean", enabled: false, edit: false},
+	{ desc: "Install Security Gateway", id: "install_security_gw", type: "boolean", enabled: true, edit: false},
+	{ desc: "DAIP Gateway", id: "gateway_daip", type: "boolean", enabled: true, edit: true},
+	{ desc: "Install PPAK", id: "install_ppak", type: "boolean", enabled: true, edit: false},
+	{ desc: "Part of a cluster", id: "gateway_cluster_member", type: "boolean", enabled: true, edit: true},
+]
+
 //Create clone of gwOptionsEmpty which we can modify
 var gwSettings = structuredClone(gwOptionsEmpty);
 //alert(gwSettings.install_security_gw);
@@ -70,9 +82,13 @@ END USER EDITABLE VARIABLES
 $( document ).ready(function() {
 
 	// Hide the following elements on load
-	$("#activityIdInputDiv, #domainNameSelectDiv, #filterListInputDiv, #create_commandsDiv, #copyCliOutputDiv, #deploymentPlansObjSelectDiv, #mgmtServerInputDiv, #copyFilterOutputDiv" ).hide();
+	$("#inputDiv, #domainNameSelectDiv, #filterListInputDiv, #create_commandsDiv, #copyCliOutputDiv, #deploymentPlansObjSelectDiv, #mgmtServerInputDiv, #copyFilterOutputDiv" ).hide();
 
-	document.getElementById('filterListInput').value = "";
+	document.getElementById('inputDiv').value = "";
+
+	//document.getElementById('filterListInput').value = "";
+	//Delete me after working
+	//createInputForm("inputDiv",gwOptions);
 
 	// Function to dynamically create HTML SELECT element from array
 	function createSelectFromObject(div_id_name,select_id_name,object_name, defaultText, doNotFilterByActiveMdm){
@@ -138,41 +154,69 @@ $( document ).ready(function() {
 
 	}
 
-	//Create the top level select dropdown for Type, change focus to it after created
-    createSelectFromObject2("topLevelSelectDiv", "topLevelSelect", topLevelOptions, "Select which FTW config to create" );
-    document.getElementById("topLevelSelect").focus();
+	// Function to dynamically create HTML SELECT element from array
+	function createInputForm(div_id_name,object_name){
+	    var myDiv = document.getElementById(div_id_name);
 
-	//On page load ensure this is reset to handle browser caching
-	$("#filterEnabled").removeAttr("checked");
+        //Iterate through the object, and create the form to collect the input
+	    for (key in object_name) {
+			console.log(object_name[key].desc)
+			switch(object_name[key].type) {
+				case "text":
+					//Create Input Text boxes to collect the required data
+					$( "#" + div_id_name ).append( '<div class"inputText"><label for:"' + object_name[key].id + '">' + object_name[key].desc + ':</label>' + ' <input type="text" id="' + object_name[key].id + '"></div>' );
+				break;
+				case "boolean":
+					//If item is enabled and user should be able to edit
+					if (object_name[key].edit === true && object_name[key].enabled === true){
+						$( "#" + div_id_name ).append( '<div class"inputRadio"><form><label for:"' + object_name[key].id + '">' + object_name[key].desc + ':</label>' + '<form><input type="checkbox" id="' + object_name[key].id + '"></form></div>' );
+					//If item is enabled and user should NOT be able to edit
+					} else if (object_name[key].edit === false && object_name[key].enabled === true){
+						$( "#" + div_id_name ).append( '<div class"inputRadio"><form><label for:"' + object_name[key].id + '">' + object_name[key].desc + ':</label>' + '<form><input type="checkbox" checked="checked" id="' + object_name[key].id + '" disabled></form></div>' );
+					//If item is disabled and user should NOT be able to edit
+					} else {
+						$( "#" + div_id_name ).append( '<div class"inputRadio"><form><label for:"' + object_name[key].id + '">' + object_name[key].desc + ':</label>' + '<form><input type="radio" id="' + object_name[key].id + '" disabled></form></div>' );
+					}
+				break;
+			}
+
+
+	    } // end for loop over object to create select elements
+
+	}
+
+
+	//Create the top level select dropdown for Type
+    createSelectFromObject2("topLevelSelectDiv", "topLevelSelect", topLevelOptions, "Select which FTW config to create" );
+    //Change focus to select element after created
+	document.getElementById("topLevelSelect").focus();
 
 	// On change of the select element, reset the global variables and either hide or show the subsequent select menu's
-	$('#mdsServerSelect').change(function(){
+	$('#topLevelSelect').change(function(){
 
 		// Process the following events anytime this select option is changed
-		$("#activityIdInputDiv, #domainNameSelectDiv, #filterListInputDiv, #create_commandsDiv, #copyCliOutputDiv, #deploymentPlansObjSelectDiv, #mgmtServerInputDiv, #copyFilterOutputDiv" ).hide();
+		$("#inputDiv, #domainNameSelectDiv, #filterListInputDiv, #create_commandsDiv, #copyCliOutputDiv, #deploymentPlansObjSelectDiv, #mgmtServerInputDiv, #copyFilterOutputDiv" ).hide();
 		defaultOutputDivs();
-		document.getElementById('activityIdInput').value = "";
-
+		document.getElementById('inputDiv').value = "";
 
 		// Conditionally process the following events based upon #rewriteOptionSelect selected option value
-		if ( $("#mdsServerSelect option:selected").val() === "") {
-			$("#domainNameSelectDiv, #activityIdInputDiv, #deploymentPlansObjSelectDiv, #mgmtServerInputDiv").hide();
+		if ( $("#topLevelSelect option:selected").val() === "") {
+			$("#domainNameSelectDiv, #inputDiv, #deploymentPlansObjSelectDiv, #mgmtServerInputDiv").hide();
+			document.getElementById('inputDiv').value = "";
 		} else {
-			$("#domainNameSelectDiv").show();
-
+			$("#inputDiv").show();
+			createInputForm("inputDiv",gwOptions);
 			//Delete the placeholder and recreate the select element
+			/*
 			if (document.getElementById("domainNameSelect")) {
 				var element = document.getElementById("domainNameSelect");
 				element.parentNode.removeChild(element);
 			}
-
-		//Create the domain select element, change focus to it
-		createSelectFromObject("domainNameSelectDiv", "domainNameSelect", domainsObj, "Select a domain:", false);
-		document.getElementById("domainNameSelect").focus();
+				*/
 
 		} // end else statement
 
-	}); //End #mdsServerSelect change event
+	}); //End #topLevelSelect change event
 
 	// On change of the select element, hide or show the subsequent select menu's
 	$(document).on('change', '#domainNameSelect', function(){
@@ -435,6 +479,9 @@ function copyToClipboard(element, copyToClipboardOutputModifier) {
 		color: white;
 	}
 
+	div {
+		padding-top: 5px;
+	}
 </style>
 
 </head>
@@ -451,19 +498,12 @@ function copyToClipboard(element, copyToClipboardOutputModifier) {
 	</div>
 	<h2>FTW CLI generator</h2>
 	<div id="topLevelSelectDiv">Type: </div>
-	<div id="domainNameSelectDiv">Domain: </div>
-	<div id="deploymentPlansObjSelectDiv">Deployment Plan: </div>
+	<div id="inputDiv">Please fill in the form below: <br><br></div>
 	<div id="activityIdInputDiv">
 		<label for="activityIdInput">Activity Name: </label><input type="text" id="activityIdInput" class="input-box"> - <a href="#" id="activityIdHelp" title="Click for more info about the activity name usage">What is this?</a>
 		<br /><br />
 		<input type="checkbox" id="filterEnabled" value="no"> Use candidate filter list
 		<br />
-	</div>
-	<div id="filterListInputDiv">
-		<label for="filterListInput">Names of gateways you want to include in candidate list (<span class="pinktext">each on a seperate line, no commas</span>):</label>
-		<br/>
-		<textarea id="filterListInput" rows="5" cols="30" name="filterListInput"></textarea>
-			<br>
 	</div>
 	<div id="create_commandsDiv">
 		<br />
